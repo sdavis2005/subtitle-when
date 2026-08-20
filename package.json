@@ -1,0 +1,17 @@
+{
+  "name": "subtitle-when",
+  "version": "0.1.0",
+  "description": "Find the timecode where a phrase is spoken in an SRT subtitle file",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "subtitle-when": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
