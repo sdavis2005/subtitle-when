@@ -55,6 +55,16 @@ tsc
 node dist/cli.js movie.srt "not gonna happen"
 ```
 
+## Testing
+
+Unit tests cover `parseSrt`, `formatTimecode`, and `findOccurrences` and
+live next to the code they test (`src/*.test.ts`). They use Node's
+built-in test runner, so there's nothing to install:
+
+```
+npm test
+```
+
 ## Design
 
 The parsing and search logic are plain, pure functions over plain data:
