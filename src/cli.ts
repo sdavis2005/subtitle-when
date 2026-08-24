@@ -1,13 +1,19 @@
 import { readFileSync } from "node:fs";
-import { parseSrt, formatTimecode } from "./srt.js";
+import { extname } from "node:path";
+import { parseSrt, formatTimecode, type Cue } from "./srt.js";
+import { parseVtt } from "./vtt.js";
 import { findOccurrences } from "./search.js";
+
+function parseByExtension(filePath: string, content: string): Cue[] {
+  return extname(filePath).toLowerCase() === ".vtt" ? parseVtt(content) : parseSrt(content);
+}
 
 function main(argv: string[]): number {
   const [filePath, ...phraseParts] = argv;
   const phrase = phraseParts.join(" ");
 
   if (!filePath || !phrase) {
-    console.error("usage: subtitle-when <file.srt> <phrase>");
+    console.error("usage: subtitle-when <file.srt|file.vtt> <phrase>");
     return 1;
   }
 
@@ -20,7 +26,7 @@ function main(argv: string[]): number {
     return 1;
   }
 
-  const cues = parseSrt(content);
+  const cues = parseByExtension(filePath, content);
   const matches = findOccurrences(cues, phrase, { caseSensitive: false });
 
   if (matches.length === 0) {

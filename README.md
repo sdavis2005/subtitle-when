@@ -6,15 +6,18 @@ exactly when it's said so you can cut to it. Or you have a translated
 subtitles at all. Scrubbing through a video player to find one line is
 slow and imprecise.
 
-`subtitle-when` answers exactly that question and nothing else: given an
-SRT file and a phrase, it prints the timecode of every cue that contains
-it.
+`subtitle-when` answers exactly that question and nothing else: given a
+subtitle file (SRT or WebVTT) and a phrase, it prints the timecode of
+every cue that contains it.
 
 ## Usage
 
 ```
 subtitle-when movie.srt "not gonna happen"
 ```
+
+The file format is picked from the extension: `.vtt` is parsed as
+WebVTT, anything else is parsed as SRT.
 
 Given this `movie.srt`:
 
@@ -57,8 +60,9 @@ node dist/cli.js movie.srt "not gonna happen"
 
 ## Testing
 
-Unit tests cover `parseSrt`, `formatTimecode`, and `findOccurrences` and
-live next to the code they test (`src/*.test.ts`). They use Node's
+Unit tests cover `parseSrt`, `parseVtt`, `formatTimecode`, and
+`findOccurrences` and live next to the code they test (`src/*.test.ts`).
+They use Node's
 built-in test runner, so there's nothing to install:
 
 ```
@@ -71,6 +75,9 @@ The parsing and search logic are plain, pure functions over plain data:
 
 - `parseSrt(content: string): Cue[]` turns raw SRT text into a list of
   `{ index, startMs, endMs, text }` cues. No file access, no globals.
+- `parseVtt(content: string): Cue[]` does the same for WebVTT text,
+  producing the same `Cue[]` shape so the rest of the tool doesn't need
+  to know which format a file came from.
 - `findOccurrences(cues, phrase, options): Match[]` scans cues for a
   phrase and returns which ones matched. It doesn't know or care where
   the cues came from.
@@ -78,14 +85,15 @@ The parsing and search logic are plain, pure functions over plain data:
   `HH:MM:SS,mmm` format SRT files use.
 
 `src/cli.ts` is the only file that touches the filesystem or process
-argv. Everything it does is a thin wrapper: read a file, call the pure
-functions above, print the result. That split is the point of this
-project — the parsing and query logic can be tested with plain strings
-in, plain data out, no mocking a filesystem or a video player.
+argv. Everything it does is a thin wrapper: read a file, pick a parser
+by extension, call the pure functions above, print the result. That
+split is the point of this project — the parsing and query logic can be
+tested with plain strings in, plain data out, no mocking a filesystem or
+a video player.
 
 ## Limitations (for now)
 
-- Only SRT is supported. No WebVTT, no ASS/SSA.
+- No ASS/SSA support.
 - Search is a plain substring match, not fuzzy or regex.
 - No timestamp-based query yet ("what's on screen at 00:12:30") — that's
   a different question from the one this tool currently answers.
