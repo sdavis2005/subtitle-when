@@ -58,6 +58,26 @@ export function parseSrt(content: string): Cue[] {
   return cues;
 }
 
+const USER_TIMECODE = /^(?:(\d{1,2}):)?(\d{1,2}):(\d{1,2})(?:[,.](\d{1,3}))?$/;
+
+/**
+ * Parses a timecode typed by a person (as opposed to one read from a
+ * subtitle file) into milliseconds. Hours and the millisecond component
+ * are both optional, and either "," or "." works as the ms separator, so
+ * "1:13", "0:01:13.5", and "00:01:13,500" are all accepted. Returns null
+ * for anything that doesn't look like a timecode.
+ */
+export function parseTimecode(text: string): number | null {
+  const match = USER_TIMECODE.exec(text.trim());
+  if (!match) {
+    return null;
+  }
+
+  const [, hh, mm, ss, ms] = match;
+  const millis = ms ? ms.padEnd(3, "0") : "0";
+  return timecodeToMs(hh ?? "0", mm, ss, millis);
+}
+
 /** Formats milliseconds back into an SRT-style "HH:MM:SS,mmm" timecode. */
 export function formatTimecode(totalMs: number): string {
   const ms = Math.max(0, Math.round(totalMs));

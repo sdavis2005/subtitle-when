@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseSrt, formatTimecode } from "./srt.js";
+import { parseSrt, formatTimecode, parseTimecode } from "./srt.js";
 
 test("parses a well-formed multi-cue file", () => {
   const cues = parseSrt(
@@ -87,4 +87,26 @@ test("formatTimecode round-trips through parseSrt's own timecodes", () => {
 
 test("formatTimecode clamps negative input to zero", () => {
   assert.equal(formatTimecode(-500), "00:00:00,000");
+});
+
+test("parseTimecode accepts full HH:MM:SS,mmm timecodes", () => {
+  assert.equal(parseTimecode("01:02:03,045"), 3_723_045);
+});
+
+test("parseTimecode accepts a dot as the millisecond separator", () => {
+  assert.equal(parseTimecode("01:02:03.045"), 3_723_045);
+});
+
+test("parseTimecode treats hours and milliseconds as optional", () => {
+  assert.equal(parseTimecode("01:13"), 73_000);
+  assert.equal(parseTimecode("0:01:13"), 73_000);
+});
+
+test("parseTimecode pads a short millisecond fraction", () => {
+  assert.equal(parseTimecode("00:00:01.5"), 1_500);
+});
+
+test("parseTimecode rejects text that isn't a timecode", () => {
+  assert.equal(parseTimecode("not a timecode"), null);
+  assert.equal(parseTimecode(""), null);
 });

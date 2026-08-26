@@ -48,6 +48,27 @@ If nothing matches, it says so instead of printing nothing:
 "xyz" does not appear in movie.srt
 ```
 
+To go the other direction — what's being said at a given moment instead of
+when a given line is said — pass `--at` with a timecode instead of a
+phrase:
+
+```
+subtitle-when movie.srt --at 00:01:13
+```
+
+```
+00:01:12,800 --> 00:01:15,000  I said it's not gonna happen, John.
+```
+
+The timecode accepts the same `HH:MM:SS,mmm` format the file itself uses,
+but hours and the millisecond fraction are both optional, so `1:13`,
+`0:01:13.5`, and `00:01:13,500` all work. If the moment falls between
+cues, or after the last one ends, it says so:
+
+```
+nothing is on screen at 00:01:13,000 in movie.srt
+```
+
 ## Building
 
 There are no dependencies to install. Compile with `tsc` (any recent
@@ -60,8 +81,9 @@ node dist/cli.js movie.srt "not gonna happen"
 
 ## Testing
 
-Unit tests cover `parseSrt`, `parseVtt`, `formatTimecode`, and
-`findOccurrences` and live next to the code they test (`src/*.test.ts`).
+Unit tests cover `parseSrt`, `parseVtt`, `formatTimecode`, `parseTimecode`,
+`findOccurrences`, and `findAtTimestamp`, and live next to the code they
+test (`src/*.test.ts`).
 They use Node's
 built-in test runner, so there's nothing to install:
 
@@ -81,8 +103,13 @@ The parsing and search logic are plain, pure functions over plain data:
 - `findOccurrences(cues, phrase, options): Match[]` scans cues for a
   phrase and returns which ones matched. It doesn't know or care where
   the cues came from.
+- `findAtTimestamp(cues, timeMs): Cue[]` returns every cue on screen at a
+  given moment, using a half-open `[startMs, endMs)` interval so adjacent
+  cues don't both match the instant one ends and the next begins.
 - `formatTimecode(ms): string` turns milliseconds back into the
   `HH:MM:SS,mmm` format SRT files use.
+- `parseTimecode(text): number | null` is the inverse, for turning a
+  timecode a person typed on the command line into milliseconds.
 
 `src/cli.ts` is the only file that touches the filesystem or process
 argv. Everything it does is a thin wrapper: read a file, pick a parser
@@ -95,5 +122,5 @@ a video player.
 
 - No ASS/SSA support.
 - Search is a plain substring match, not fuzzy or regex.
-- No timestamp-based query yet ("what's on screen at 00:12:30") — that's
-  a different question from the one this tool currently answers.
+- `findAtTimestamp` assumes cues don't need reconciling if a file has
+  overlapping or out-of-order cues, it returns whatever matches as-is.

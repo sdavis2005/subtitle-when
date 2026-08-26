@@ -40,3 +40,14 @@ export function findOccurrences(
 
   return matches;
 }
+
+/**
+ * Finds every cue that is on screen at the given moment, in cue order.
+ *
+ * A cue is "on screen" for the half-open interval [startMs, endMs) — this
+ * keeps a cue that ends exactly when the next one begins from matching
+ * both, which is how adjacent subtitles are usually authored.
+ */
+export function findAtTimestamp(cues: readonly Cue[], timeMs: number): Cue[] {
+  return cues.filter((cue) => timeMs >= cue.startMs && timeMs < cue.endMs);
+}
