@@ -5,7 +5,7 @@ import { parseVtt } from "./vtt.js";
 import { findOccurrences, findAtTimestamp } from "./search.js";
 
 const USAGE = [
-  "usage: subtitle-when <file.srt|file.vtt> <phrase>",
+  "usage: subtitle-when <file.srt|file.vtt> [--case-sensitive] [--regex] <phrase>",
   "       subtitle-when <file.srt|file.vtt> --at <timecode>",
 ].join("\n");
 
@@ -61,8 +61,28 @@ function main(argv: string[]): number {
     return 0;
   }
 
-  const phrase = rest.join(" ");
-  const matches = findOccurrences(cues, phrase, { caseSensitive: false });
+  let caseSensitive = false;
+  let regex = false;
+  const phraseWords: string[] = [];
+  for (const arg of rest) {
+    if (arg === "--case-sensitive") {
+      caseSensitive = true;
+    } else if (arg === "--regex") {
+      regex = true;
+    } else {
+      phraseWords.push(arg);
+    }
+  }
+  const phrase = phraseWords.join(" ");
+
+  let matches;
+  try {
+    matches = findOccurrences(cues, phrase, { caseSensitive, regex });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(message);
+    return 1;
+  }
 
   if (matches.length === 0) {
     console.log(`"${phrase}" does not appear in ${filePath}`);

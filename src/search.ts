@@ -2,6 +2,8 @@ import type { Cue } from "./srt.js";
 
 export interface SearchOptions {
   caseSensitive?: boolean;
+  /** Treat `phrase` as a JavaScript regular expression instead of a literal substring. */
+  regex?: boolean;
 }
 
 export interface Match {
@@ -16,6 +18,10 @@ export interface Match {
  * This is the one question the tool answers: "when is this phrase said?"
  * Everything else (formatting, file I/O) lives outside this function so
  * the search logic itself stays a pure string operation over plain data.
+ *
+ * Throws if `options.regex` is set and `phrase` is not a valid pattern, so
+ * the caller (the CLI) can report the bad pattern instead of silently
+ * treating it as "no matches".
  */
 export function findOccurrences(
   cues: readonly Cue[],
@@ -27,6 +33,26 @@ export function findOccurrences(
   }
 
   const caseSensitive = options.caseSensitive ?? false;
+
+  if (options.regex) {
+    let pattern: RegExp;
+    try {
+      pattern = new RegExp(phrase, caseSensitive ? "" : "i");
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      throw new Error(`invalid regex "${phrase}": ${reason}`);
+    }
+
+    const matches: Match[] = [];
+    for (const cue of cues) {
+      const found = pattern.exec(cue.text);
+      if (found) {
+        matches.push({ cue, charOffset: found.index });
+      }
+    }
+    return matches;
+  }
+
   const needle = caseSensitive ? phrase : phrase.toLowerCase();
 
   const matches: Match[] = [];

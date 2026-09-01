@@ -47,6 +47,35 @@ test("matches phrases split by cue text alone, not across cues", () => {
   assert.equal(matches.length, 0);
 });
 
+test("treats the phrase as a regex when requested", () => {
+  const matches = findOccurrences([cue("gonna happen"), cue("going to happen")], "gonna|going to", {
+    regex: true,
+  });
+  assert.equal(matches.length, 2);
+});
+
+test("regex search is case-insensitive by default", () => {
+  const matches = findOccurrences([cue("Not Gonna Happen")], "not.gonna", { regex: true });
+  assert.equal(matches.length, 1);
+});
+
+test("regex search honors caseSensitive", () => {
+  const matches = findOccurrences([cue("Not Gonna Happen")], "not gonna", {
+    regex: true,
+    caseSensitive: true,
+  });
+  assert.equal(matches.length, 0);
+});
+
+test("regex search reports the match offset", () => {
+  const matches = findOccurrences([cue("well, not gonna happen")], "not.gonna.happen", { regex: true });
+  assert.equal(matches[0]?.charOffset, 6);
+});
+
+test("throws for an invalid regex pattern", () => {
+  assert.throws(() => findOccurrences([cue("anything")], "(unclosed", { regex: true }));
+});
+
 test("findAtTimestamp finds the cue on screen at a given moment", () => {
   const cues = [cue("first", 1), cue("second", 2)];
   const matches = findAtTimestamp(cues, 1_200);

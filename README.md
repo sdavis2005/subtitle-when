@@ -48,6 +48,15 @@ If nothing matches, it says so instead of printing nothing:
 "xyz" does not appear in movie.srt
 ```
 
+By default the search is a plain, case-insensitive substring match. Add
+`--case-sensitive` to require exact case, or `--regex` to treat the phrase
+as a JavaScript regular expression (still case-insensitive unless combined
+with `--case-sensitive`):
+
+```
+subtitle-when movie.srt --regex "gonna|going to"
+```
+
 To go the other direction — what's being said at a given moment instead of
 when a given line is said — pass `--at` with a timecode instead of a
 phrase:
@@ -101,8 +110,9 @@ The parsing and search logic are plain, pure functions over plain data:
   producing the same `Cue[]` shape so the rest of the tool doesn't need
   to know which format a file came from.
 - `findOccurrences(cues, phrase, options): Match[]` scans cues for a
-  phrase and returns which ones matched. It doesn't know or care where
-  the cues came from.
+  phrase and returns which ones matched. `options.caseSensitive` and
+  `options.regex` control how the phrase is matched; it doesn't know or
+  care where the cues came from.
 - `findAtTimestamp(cues, timeMs): Cue[]` returns every cue on screen at a
   given moment, using a half-open `[startMs, endMs)` interval so adjacent
   cues don't both match the instant one ends and the next begins.
@@ -121,6 +131,6 @@ a video player.
 ## Limitations (for now)
 
 - No ASS/SSA support.
-- Search is a plain substring match, not fuzzy or regex.
+- Search is exact (substring or regex), not fuzzy.
 - `findAtTimestamp` assumes cues don't need reconciling if a file has
   overlapping or out-of-order cues, it returns whatever matches as-is.
