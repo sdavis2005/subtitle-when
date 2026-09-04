@@ -17,7 +17,7 @@ function timecodeToMs(hh: string, mm: string, ss: string, ms: string): number {
 }
 
 /**
- * Parses SRT file contents into an ordered list of cues.
+ * Parses SRT file contents into a list of cues, sorted by start time.
  *
  * Deliberately lenient: blocks with a missing or non-numeric index are
  * still parsed (index falls back to position in the file), since plenty
@@ -55,7 +55,21 @@ export function parseSrt(content: string): Cue[] {
     cues.push({ index, startMs, endMs, text });
   });
 
-  return cues;
+  return sortCues(cues);
+}
+
+/**
+ * Sorts cues by start time, breaking ties by end time and then by the
+ * cue's own index. Subtitle files are sometimes exported or hand-edited
+ * with cues out of chronological order (merged tracks, reordered edits),
+ * and every consumer downstream - search results, --at lookups, printing -
+ * assumes cues come back in the order they'll actually play, so parsing
+ * sorts once here rather than leaving it to each caller.
+ */
+export function sortCues(cues: readonly Cue[]): Cue[] {
+  return [...cues].sort(
+    (a, b) => a.startMs - b.startMs || a.endMs - b.endMs || a.index - b.index
+  );
 }
 
 const USER_TIMECODE = /^(?:(\d{1,2}):)?(\d{1,2}):(\d{1,2})(?:[,.](\d{1,3}))?$/;

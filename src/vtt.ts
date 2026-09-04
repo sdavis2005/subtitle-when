@@ -1,4 +1,4 @@
-import type { Cue } from "./srt.js";
+import { sortCues, type Cue } from "./srt.js";
 
 const TIMECODE_LINE =
   /(?:(\d{2}):)?(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(?:(\d{2}):)?(\d{2}):(\d{2})\.(\d{3})/;
@@ -13,9 +13,9 @@ function timecodeToMs(hh: string | undefined, mm: string, ss: string, ms: string
 }
 
 /**
- * Parses WebVTT file contents into an ordered list of cues, reusing the
- * same Cue shape as parseSrt so search/formatting code doesn't need to
- * care which format a file came from.
+ * Parses WebVTT file contents into a list of cues, sorted by start time
+ * and reusing the same Cue shape as parseSrt so search/formatting code
+ * doesn't need to care which format a file came from.
  *
  * WEBVTT header, NOTE, STYLE, and REGION blocks are skipped since they
  * carry no cue text. A cue's identifier line is optional (unlike SRT's
@@ -60,5 +60,5 @@ export function parseVtt(content: string): Cue[] {
     nextIndex += 1;
   }
 
-  return cues;
+  return sortCues(cues);
 }

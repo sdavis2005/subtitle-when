@@ -114,3 +114,20 @@ test("returns an empty list for empty or whitespace-only input", () => {
   assert.deepEqual(parseVtt(""), []);
   assert.deepEqual(parseVtt("\n\n   \n\n"), []);
 });
+
+test("sorts cues by start time even when the file lists them out of order", () => {
+  const cues = parseVtt(
+    [
+      "WEBVTT",
+      "",
+      "00:01:00.000 --> 00:01:02.000",
+      "second",
+      "",
+      "00:00:01.000 --> 00:00:03.000",
+      "first",
+    ].join("\n")
+  );
+
+  assert.equal(cues[0]?.text, "first");
+  assert.equal(cues[1]?.text, "second");
+});

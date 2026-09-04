@@ -105,10 +105,17 @@ npm test
 The parsing and search logic are plain, pure functions over plain data:
 
 - `parseSrt(content: string): Cue[]` turns raw SRT text into a list of
-  `{ index, startMs, endMs, text }` cues. No file access, no globals.
+  `{ index, startMs, endMs, text }` cues, sorted by start time. No file
+  access, no globals.
 - `parseVtt(content: string): Cue[]` does the same for WebVTT text,
   producing the same `Cue[]` shape so the rest of the tool doesn't need
   to know which format a file came from.
+- `sortCues(cues): Cue[]` sorts cues by start time, breaking ties by end
+  time and then by index. Both parsers call it before returning, so a
+  file with cues listed out of order (a common side effect of merging
+  tracks or hand-editing) still searches and prints in playback order.
+  Overlapping cues are left as separate entries rather than merged, since
+  `findAtTimestamp` is meant to report everything on screen at once.
 - `findOccurrences(cues, phrase, options): Match[]` scans cues for a
   phrase and returns which ones matched. `options.caseSensitive` and
   `options.regex` control how the phrase is matched; it doesn't know or
@@ -132,5 +139,3 @@ a video player.
 
 - No ASS/SSA support.
 - Search is exact (substring or regex), not fuzzy.
-- `findAtTimestamp` assumes cues don't need reconciling if a file has
-  overlapping or out-of-order cues, it returns whatever matches as-is.

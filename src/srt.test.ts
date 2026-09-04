@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseSrt, formatTimecode, parseTimecode } from "./srt.js";
+import { parseSrt, formatTimecode, parseTimecode, sortCues } from "./srt.js";
 
 test("parses a well-formed multi-cue file", () => {
   const cues = parseSrt(
@@ -78,6 +78,48 @@ test("handles CRLF line endings and a leading BOM", () => {
 test("returns an empty list for empty or whitespace-only input", () => {
   assert.deepEqual(parseSrt(""), []);
   assert.deepEqual(parseSrt("\n\n   \n\n"), []);
+});
+
+test("sorts cues by start time even when the file lists them out of order", () => {
+  const cues = parseSrt(
+    [
+      "2",
+      "00:01:00,000 --> 00:01:02,000",
+      "second",
+      "",
+      "1",
+      "00:00:01,000 --> 00:00:03,000",
+      "first",
+    ].join("\n")
+  );
+
+  assert.equal(cues[0]?.text, "first");
+  assert.equal(cues[1]?.text, "second");
+});
+
+test("sortCues preserves overlapping cues and breaks ties by end time then index", () => {
+  const sorted = sortCues([
+    { index: 3, startMs: 1_000, endMs: 5_000, text: "background" },
+    { index: 2, startMs: 1_000, endMs: 2_000, text: "short overlap" },
+    { index: 1, startMs: 0, endMs: 1_000, text: "leads in" },
+  ]);
+
+  assert.deepEqual(
+    sorted.map((c) => c.text),
+    ["leads in", "short overlap", "background"]
+  );
+});
+
+test("sortCues does not mutate the input array", () => {
+  const cues = [
+    { index: 2, startMs: 2_000, endMs: 3_000, text: "b" },
+    { index: 1, startMs: 1_000, endMs: 2_000, text: "a" },
+  ];
+  const original = [...cues];
+
+  sortCues(cues);
+
+  assert.deepEqual(cues, original);
 });
 
 test("formatTimecode round-trips through parseSrt's own timecodes", () => {
